@@ -231,35 +231,46 @@ class Simulator:
         for core in self.cores:
             print(f"Core {core.coreid}: {core.registers}")
         print("\nMemory:")
-        for i in range(0, len(self.memory), 8):
-            print(f"Memory[{i}-{i+7}]: {self.memory[i:i+8]}")
+        for i, core in enumerate(self.cores):
+            print(f"Core {i} Memory:")
+            for j in range(0, len(core.memory), 8):
+                print(f"Memory[{j}-{j+7}]: {core.memory[j:j+8]}")
 
-        fig, axes = plt.subplots(2, 1, figsize=(16, 12))
+        # Create a 2x2 grid of subplots for memory visualization
+        fig, axes = plt.subplots(2, 2, figsize=(16, 12))
 
-        # Plot register state
-        data = np.array([core.registers for core in self.cores])
-        axes[0].imshow(data, cmap="Blues")
+        # Plot memory state for each core
+        for i, core in enumerate(self.cores):
+            ax = axes[i // 2, i % 2]  # Select the appropriate subplot
+            memory_reshaped = np.array(core.memory[:128]).reshape(-1, 8)  # Display first 128 words in a 2D grid
+            ax.imshow(memory_reshaped, cmap="Reds")
+            for row in range(memory_reshaped.shape[0]):
+                for col in range(8):
+                    ax.text(col, row, str(memory_reshaped[row, col]), ha="center", va="center", color="black")
+            ax.set_title(f"Core {i} Memory State (First 128 Words)")
+            ax.set_xlabel("Memory Offset")
+            ax.set_ylabel("Row Index")
+
+        plt.tight_layout()
+
+        # Create a separate figure for register visualization
+        fig2, ax2 = plt.subplots(figsize=(16, 6))
+        register_data = np.array([core.registers for core in self.cores])
+        ax2.imshow(register_data, cmap="Blues")
         for i in range(4):
             for j in range(32):
-                axes[0].text(j, i, str(self.cores[i].registers[j]), ha="center", va="center", color="black")
-        axes[0].set_title("Registers State for Each Core")
-        axes[0].set_xlabel("Register Index")
-        axes[0].set_ylabel("Core ID")
-
-        # Plot memory state
-        memory_reshaped = np.array(self.memory[:128]).reshape(-1, 8)  # Display first 128 words in a 2D grid
-        axes[1].imshow(memory_reshaped, cmap="Reds")
-        for i in range(memory_reshaped.shape[0]):
-            for j in range(8):
-                axes[1].text(j, i, str(memory_reshaped[i, j]), ha="center", va="center", color="black")
-        axes[1].set_title("Memory State (First 128 Words)")
-        axes[1].set_xlabel("Memory Offset")
-        axes[1].set_ylabel("Row Index")
+                ax2.text(j, i, str(self.cores[i].registers[j]), ha="center", va="center", color="black")
+        ax2.set_title("Registers State for Each Core")
+        ax2.set_xlabel("Register Index (X0-X31)")
+        ax2.set_ylabel("Core ID")
+        ax2.set_xticks(range(32))
+        ax2.set_xticklabels([f"X{i}" for i in range(32)])
+        ax2.set_yticks(range(4))
+        ax2.set_yticklabels([f"Core {i}" for i in range(4)])
 
         plt.tight_layout()
         plt.show()
         print(f"{self.clock}")
-
 
 # Main execution
 sim = Simulator()
