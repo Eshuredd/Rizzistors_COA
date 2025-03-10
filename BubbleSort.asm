@@ -1,19 +1,28 @@
-.data
-
-
-base: .word 15 20 21 45 69
 
 
 
 .text
 
-addi x1 x0 10 # n length of array
+addi x20 x0 12
+sw x20 0(x0)
+addi x20 x0 9
+sw x20 4(x0)
+addi x20 x0 5
+sw x20 8(x0)
+addi x20 x0 4
+sw x20 12(x0)
+
+
+
+
+
+addi x1 x0 4 # n length of array
 
 addi x2 x0 0 # i - index of outer loop
 
 addi x3 x1 -1 # n-1
 
-la x10 base #base address
+add x10 x0 x0
 
 addi x11 x0 4 #register to store multiplication of 4 bytes
 
