@@ -201,3 +201,7 @@ The main steps of the simulation are as follows:
 2. type the command python project3.py in the terminal
 ---
 
+### ISSUES :
+1. Latency is Hard Coded but works when Changed
+2. .data parsing is buggy
+
