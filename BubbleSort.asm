@@ -3,20 +3,20 @@
 
 .text
 
-addi x20 x0 12
+addi x20 x0 4
 sw x20 0(x0)
-addi x20 x0 9
+addi x20 x0 6
 sw x20 4(x0)
 addi x20 x0 5
 sw x20 8(x0)
-addi x20 x0 4
+addi x20 x0 2
 sw x20 12(x0)
 
 
 
 
 
-addi x1 x0 4 # n length of array
+addi x1 x0 5 # n length of array
 
 addi x2 x0 0 # i - index of outer loop
 
@@ -98,4 +98,6 @@ swapfin:
 
 exit:
 
+    add x0 x0 x0
+    add x0 x0 x0
     add x0 x0 x0

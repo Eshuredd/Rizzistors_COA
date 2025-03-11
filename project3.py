@@ -82,6 +82,7 @@ class PipeliningCores:
 
     def is_finished(self):
         return self.finished
+    
     def forw_EX(self,dest_id) -> any:
         #print("checking in ex",dest_id)
         parts=self.MEM
@@ -99,7 +100,7 @@ class PipeliningCores:
 
     def forw_ME(self,dest_id) -> any:
         #print("checking in me",dest_id)
-        parts=self.WB_register
+        parts=self.WB
         if not parts:
             return "False"        
         if dest_id == int(parts[1][1:]):
@@ -219,34 +220,36 @@ class PipeliningCores:
         if self.TimeExecRem >0:
             self.stall_count+=1
             self.TimeExecRem -=1
-            return
+            self.EX = instruction
+            return None
 
         opcode, *operands = instruction
         print(f"Executing instruction with opcode: {opcode}, operands: {operands}")
 
         if opcode == "add":
             rd, rs1, rs2 = operands
-            result = self.registers[int(rs1)] + self.registers[int(rs2)]
+            print("operands are", operands)
+            result =int(rs1) + int(rs2)
             self.execute_decode = True
             return (opcode, rd, result)
         elif opcode == "sub":
             rd, rs1, rs2 = operands
-            result = self.registers[int(rs1)] - self.registers[int(rs2)]
+            result =int(rs1) - int(rs2)
             self.execute_decode = True
             return (opcode, rd, result)
         elif opcode == "mul":
             rd, rs1, rs2 = operands
-            result = self.registers[int(rs1)] * self.registers[int(rs2)]
+            result = int(rs1) *int(rs2)
             self.execute_decode = True
             return (opcode, rd, result)
         elif opcode == "addi":
             rd, rs1, imm = operands
-            result = self.registers[int(rs1)] + int(imm)
+            result = int(rs1) + int(imm)
             self.execute_decode = True
             return (opcode, rd, result)
         elif opcode == "slli":
             rd, rs1, imm = operands
-            result = self.registers[int(rs1)] << int(imm)
+            result =int(rs1) << int(imm)
             self.execute_decode = True
             return (opcode, rd, result)
         elif opcode == "la":
@@ -261,8 +264,8 @@ class PipeliningCores:
             return (opcode, rd)
         elif opcode == "bge":
             rs1, rs2, label = operands
-            val1 = self.registers[int(rs1)]
-            val2 = self.registers[int(rs2)]
+            val1 = int(rs1)
+            val2 = int(rs2)
             print(f"Comparing {rs1}={val1} >= {rs2}={val2}")
             if val1 >= val2:
                 if label in self.text_labels:
@@ -281,9 +284,29 @@ class PipeliningCores:
             return None
         elif opcode == "bne":
             rs1, rs2, label = operands
-            val1 = self.registers[int(rs1)]
-            val2 = self.registers[int(rs2)]
+            val1 = int(rs1)
+            val2 = int(rs2)
             print(f"Comparing {rs1}={val1} != {rs2}={val2}")
+            if val1 >= val2:
+                if label in self.text_labels:
+                    new_pc = self.text_labels[label]
+                    print(f"Branch taken to {label}, PC changing from {self.pc} to {new_pc}")
+                    # Important: Set PC correctly and flush pipeline
+                    self.pc = new_pc * 4
+                    self.IF = None
+                    self.ID = None
+                    self.if_aval = True
+                else:
+                    print(f"Label {label} not found in text_labels")
+            else:
+                print(f"Branch not taken: {val1} < {val2}")
+            self.execute_decode = True
+            return None
+        elif opcode == "beq":
+            rs1, rs2, label = operands
+            val1 = int(rs1)
+            val2 = int(rs2)
+            print(f"Comparing {rs1}={val1} == {rs2}={val2}")
             if val1 >= val2:
                 if label in self.text_labels:
                     new_pc = self.text_labels[label]
@@ -301,8 +324,8 @@ class PipeliningCores:
             return None
         elif opcode == "blt":
             rs1, rs2, label = operands
-            val1 = self.registers[int(rs1)]
-            val2 = self.registers[int(rs2)]
+            val1 = int(rs1)
+            val2 = int(rs2)
             print(f"Comparing {rs1}={val1} < {rs2}={val2}")
             if val1 < val2:
                 if label in self.text_labels:
@@ -336,8 +359,8 @@ class PipeliningCores:
         elif opcode in ["lw", "sw"]:
             rd, offset, rs1 = operands
             print("printing before", operands)
-            print(self.registers[int(rs1)])
-            address = self.registers[int(rs1)] + int(offset)
+           # print(self.registers[int(rs1)])
+            address =int(rs1) + int(offset)
             print(address)
             self.execute_decode = True
             return (opcode, rd, address)
@@ -357,7 +380,7 @@ class PipeliningCores:
             return None
 
         if self.execute_decode == False:
-            return
+            return self.EX
 
         opcode = parts[0]
         print(f"Decoding instruction with opcode: {opcode}")
@@ -373,7 +396,7 @@ class PipeliningCores:
             source_1 = get_register_id(parts[2])
             source_2 = get_register_id(parts[3])
             dest = get_register_id(parts[1])
-
+            print("before decode",parts)
             rs1_data=None
             rs2_data=None 
             stall=False
@@ -391,32 +414,37 @@ class PipeliningCores:
                     if sr2_from_forw == "False":
                         stall=True
                     else:
-                        rs1_data = sr2_from_forw                        
+                        rs2_data = sr2_from_forw                        
 
             if stall:
                 self.stall_count+=1
                 return
-            
+            print("rs1 VALUE",rs1_data)
             if rs1_data is not None:
                 parts[2] = rs1_data
+                print("IT IS NONE")
             else:
                 parts[2] = self.registers[int(parts[2][1:])]
-
+                print("GOING")
+            print("rs1",parts)
             if rs2_data is not None:
                 parts[3]=rs2_data
             else:
                 parts[3] = self.registers[int(parts[3][1:])]
+            
 
             self.source_active[dest] += 1
             if opcode in ["lw","sw"]:
                 self.TimeExecRem=0
-            elif opcode in self.latency:
+            if opcode in self.latency:
                 self.TimeExecRem=self.latency[opcode]-1
             else:
                 self.TimeExecRem=0
             self.execute_decode = False
             self.if_aval = True
             
+            print("some bug",parts)
+
             return (opcode, parts[1], parts[2], parts[3])
 
 
@@ -534,7 +562,7 @@ class PipeliningCores:
                 rs1 = self.registers[int(rs1[1:])]
             return (opcode, rd, offset, rs1)
 
-        elif opcode in ["bge", "blt", "bne"]:
+        elif opcode in ["bge", "blt", "bne","beq"]:
             if len(parts) < 4:
                 print(f"Error: Incomplete instruction for {opcode}: {parts}")
                 return None
@@ -692,19 +720,30 @@ class PipelinedSimulator:
 
     def run(self):
         cycle = 0
-        max_cycles = 300  # Prevent infinite loops
-        
-        while True:
-            all_finished = True
-            
-            for i in range(len(self.cores)):
-                if not self.cores[i].is_finished():
-                    all_finished = False
-                    self.cores[i].advance_pipeline()
-            
+        max_cycles = 5000 # Prevent infinite loops
+
+        all_finished = False
+        while not all_finished:
+
+            for i in range(4):
+               # if not self.cores[i].is_finished():
+                   # all_finished = True
+                print(len(self.program))
+                print(self.cores[i].pc)
+                print(f"Pc is : {self.cores[i].pc}, Pipeline state: IF={self.cores[i].IF}, ID={self.cores[i].ID}, EX={self.cores[i].EX}, MEM={self.cores[i].MEM}, WB={self.cores[i].WB}")
+                # if self.cores[i].pc // 4 >= len(self.program) and not self.cores[i].IF and not self.cores[i].ID and not self.cores[i].EX and not self.cores[i].MEM and not self.cores[i].WB:
+                #     print("Execution complete!")
+                #     all_finished = True
+                self.cores[i].advance_pipeline()
+            if self.cores[i].pc // 4 >= len(self.program) and not self.cores[i].IF and not self.cores[i].ID and not self.cores[i].EX and not self.cores[i].MEM and not self.cores[i].WB:
+                    print("Execution complete!")
+                    all_finished = True
             if all_finished or cycle >= max_cycles:
                 break
-                
+            
+            # if self.pc >= len(self.program) and not self.cores[0].IF and not self.cores[0].ID and not self.cores[0].EX and not self.cores[0].MEM and not self.cores[0].WB:
+            #     print("Execution complete!")
+            #     all_finished = True
             cycle += 1
         print(f"\nSimulation completed in {cycle} cycles")
         
@@ -846,6 +885,13 @@ class PipelinedSimulator:
 # Main execution
 if __name__ == "__main__":
     sim = PipelinedSimulator('BubbleSort.asm')
+    enabling = False
+    df=input( "Enter y for DATA FORWARDING, any other input for no forwarding : ")
+    if df == "y" :
+        enabling = True
+    for i in range (4):
+        sim.cores[i].data_forwarding = enabling
     sim.run()
     sim.print_stall_summary()
     sim.display()
+    print("DATA FORWARDING IS ", enabling)
