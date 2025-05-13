@@ -15,6 +15,12 @@ This project is a multi-core RISC-V simulator developed as part of the course. I
 - Simulates shared memory access among the four cores.
 - Implements bubble sort on all cores.
 - Provides visualization of registers and memory.
+- can enable or disable data forwarding
+- shows hazards, stalls ,IPC 
+- Now has 3 Caches, one for instruction, one for data and last for shared
+- has a SYNC code that makes all the cores synchronize between each other
+- there is a scratchpad memory where we can store frequently accessed data and the latency is low for it
+- There are 2 policies LRU and FIFO, LRU is used for l1d and l1i cache where as FIFO is used for L2 cache
 
 ## Usage
 
@@ -32,11 +38,9 @@ This project is a multi-core RISC-V simulator developed as part of the course. I
     - The simulator displays the contents of the registers for each core and the memory.
     - Matplotlib is used to visualize the register and memory states.
 
-## Project Structure
+4. **Cache File:**
 
--   `simulator.py`: The main simulator script containing the core logic and implementation.
--   `test.asm`: An example assembly file that the simulator can execute.
--   `README.md`: This file, providing an overview of the project.
+   - The Cache file should be in the same format as the cache file in the repo
 
 ## Code Description
 
@@ -196,8 +200,12 @@ The main steps of the simulation are as follows:
 - [Matplotlib](https://matplotlib.org/)
 ---
 ## How to Use
-1. Have a assembly file named BubbleSort.asm 
+1. Have a assembly file
 
-2. type the command python project3.py in the terminal
+2. Replace the name of file in main by the assembly file name
+
+3. type the command python project3.py in the terminal
+
+4. Enter if you want data forwarding or not
 ---
 
