@@ -1,0 +1,12 @@
+l1i_size=400
+l1d_size=400
+l1_block_size=8
+l1_associativity=4
+l1_access_latency=4
+l1_replacement_policy=LRU
+l2_size=1024
+l2_block_size=8
+l2_associativity=8
+l2_access_latency=8
+l2_replacement_policy=LRU
+memory_latency=100
